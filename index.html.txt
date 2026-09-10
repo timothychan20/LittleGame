@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學習小遊戲平台</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            color: #333;
+            padding-bottom: 50px;
+        }
+
+        header {
+            background-color: #4A90E2;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .teacher-login-btn {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background-color: #FF9500;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .teacher-login-btn:hover {
+            background-color: #e08200;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* 頁籤樣式 */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background-color: #e0e0e0;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background-color: #4A90E2;
+            color: white;
+        }
+
+        /* 遊戲卡片網格 */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .game-card img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+
+        .game-info {
+            padding: 15px;
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .game-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .game-grade {
+            font-size: 12px;
+            color: #777;
+            background-color: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .play-btn {
+            display: block;
+            background-color: #28A745;
+            color: white;
+            text-decoration: none;
+            padding: 8px 0;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .delete-btn {
+            background-color: #DC3545;
+            color: white;
+            border: none;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        /* 老師管理面板 */
+        .admin-panel {
+            background-color: #ffffff;
+            border: 2px dashed #4A90E2;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .admin-panel.active {
+            display: block;
+        }
+
+        .admin-panel h3 {
+            margin-bottom: 15px;
+            color: #4A90E2;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .submit-btn {
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .empty-msg {
+            text-align: center;
+            color: #888;
+            grid-column: 1 / -1;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎮 學生學習小遊戲平台</h1>
+        <button class="teacher-login-btn" id="authBtn" onclick="toggleTeacherAuth()">老師登入</button>
+    </header>
+
+    <div class="container">
+        
+        <!-- 老師管理面板（新增連結） -->
+        <div class="admin-panel" id="adminPanel">
+            <h3>➕ 新增小遊戲連結（老師專區）</h3>
+            <form id="addGameForm" onsubmit="addGame(event)">
+                <div class="form-group">
+                    <label for="gameTitle">連結名稱：</label>
+                    <input type="text" id="gameTitle" required placeholder="例如：數學算術大挑戰">
+                </div>
+                <div class="form-group">
+                    <label for="gameGrade">適用年級：</label>
+                    <select id="gameGrade" required>
+                        <option value="小一">小一</option>
+                        <option value="小二">小二</option>
+                        <option value="小三">小三</option>
+                        <option value="小四">小四</option>
+                        <option value="小五">小五</option>
+                        <option value="小六">小六</option>
+                        <option value="中一">中一</option>
+                        <option value="中二">中二</option>
+                        <option value="中三">中三</option>
+                        <option value="中四">中四</option>
+                        <option value="中五">中五</option>
+                        <option value="中六">中六</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="gameUrl">遊戲網址 (URL)：</label>
+                    <input type="url" id="gameUrl" required placeholder="https://example.com">
+                </div>
+                <div class="form-group">
+                    <label for="gameImg">圖片網址 (URL)：</label>
+                    <input type="url" id="gameImg" placeholder="https://example.com/image.jpg (留空使用預設圖)">
+                </div>
+                <button type="submit" class="submit-btn">儲存並新增</button>
+            </form>
+        </div>
+
+        <!-- 分類頁籤 -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchCategory('初小', this)">初小 (小一至小三)</button>
+            <button class="tab-btn" onclick="switchCategory('高小', this)">高小 (小四至小六)</button>
+            <button class="tab-btn" onclick="switchCategory('初中', this)">初中 (中一至中三)</button>
+            <button class="tab-btn" onclick="switchCategory('高中', this)">高中 (中四至中六)</button>
+        </div>
+
+        <!-- 遊戲展示區 -->
+        <div class="games-grid" id="gamesContainer">
+            <!-- 動態生成遊戲卡片 -->
+        </div>
+
+    </div>
+
+    <script>
+        // 設定登入密碼
+        const TEACHER_CODE = "ks23417422";
+        let isLoggedIn = false;
+        let currentCategory = '初小';
+
+        // 年級與組別對應關係
+        const categoryMap = {
+            '初小': ['小一', '小二', '小三'],
+            '高小': ['小四', '小五', '小六'],
+            '初中': ['中一', '中二', '中三'],
+            '高中': ['中四', '中五', '中六']
+        };
+
+        // 預設遊戲資料 (若無本地紀錄時載入)
+        const defaultGames = [
+            { id: 1, title: '趣味加減法', grade: '小一', url: 'https://example.com', img: 'https://picsum.photos/200/140?random=1' },
+            { id: 2, title: '英文單字對對碰', grade: '小四', url: 'https://example.com', img: 'https://picsum.photos/200/140?random=2' },
+            { id: 3, title: '科學元素挑戰', grade: '中二', url: 'https://example.com', img: 'https://picsum.photos/200/140?random=3' },
+            { id: 4, title: '歷史知識問答', grade: '中五', url: 'https://example.com', img: 'https://picsum.photos/200/140?random=4' }
+        ];
+
+        // 讀取遊戲資料
+        function getGames() {
+            const saved = localStorage.getItem('gamesData');
+            return saved ? JSON.parse(saved) : defaultGames;
+        }
+
+        // 儲存遊戲資料
+        function saveGames(games) {
+            localStorage.setItem('gamesData', JSON.stringify(games));
+        }
+
+        // 老師登入 / 登出 切換
+        function toggleTeacherAuth() {
+            if (isLoggedIn) {
+                isLoggedIn = false;
+                document.getElementById('authBtn').innerText = "老師登入";
+                document.getElementById('adminPanel').classList.remove('active');
+                alert("已成功登出老師模式");
+            } else {
+                const inputCode = prompt("請輸入老師登入碼：");
+                if (inputCode === TEACHER_CODE) {
+                    isLoggedIn = true;
+                    document.getElementById('authBtn').innerText = "登出管理員";
+                    document.getElementById('adminPanel').classList.add('active');
+                    alert("登入成功！您可以新增或刪除遊戲連結。");
+                } else if (inputCode !== null) {
+                    alert("登入碼錯誤，請重新輸入！");
+                }
+            }
+            renderGames(); // 重新渲染以顯示/隱藏刪除按鈕
+        }
+
+        // 切換分類頁籤
+        function switchCategory(category, btnElement) {
+            currentCategory = category;
+            
+            // 更新頁籤 active 樣式
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            renderGames();
+        }
+
+        // 新增遊戲
+        function addGame(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('gameTitle').value;
+            const grade = document.getElementById('gameGrade').value;
+            const url = document.getElementById('gameUrl').value;
+            let img = document.getElementById('gameImg').value;
+
+            if (!img) {
+                img = 'https://picsum.photos/200/140?random=' + Date.now(); // 預設占位圖
+            }
+
+            const newGame = {
+                id: Date.now(),
+                title: title,
+                grade: grade,
+                url: url,
+                img: img
+            };
+
+            const games = getGames();
+            games.push(newGame);
+            saveGames(games);
+
+            // 清空表單
+            document.getElementById('addGameForm').reset();
+            alert("新增成功！");
+
+            // 自動切換到對應的組別查看
+            for (const [cat, grades] of Object.entries(categoryMap)) {
+                if (grades.includes(grade)) {
+                    const tabs = document.querySelectorAll('.tab-btn');
+                    const targetBtn = Array.from(tabs).find(btn => btn.innerText.includes(cat));
+                    if (targetBtn) switchCategory(cat, targetBtn);
+                    break;
+                }
+            }
+        }
+
+        // 刪除遊戲
+        function deleteGame(id) {
+            if (confirm("確定要刪除這個遊戲連結嗎？")) {
+                let games = getGames();
+                games = games.filter(game => game.id !== id);
+                saveGames(games);
+                renderGames();
+            }
+        }
+
+        // 渲染遊戲列表
+        function renderGames() {
+            const gamesContainer = document.getElementById('gamesContainer');
+            gamesContainer.innerHTML = '';
+
+            const games = getGames();
+            const allowedGrades = categoryMap[currentCategory];
+
+            // 篩選當前組別的遊戲
+            const filteredGames = games.filter(game => allowedGrades.includes(game.grade));
+
+            if (filteredGames.length === 0) {
+                gamesContainer.innerHTML = `<div class="empty-msg">目前【${currentCategory}】分頁尚無遊戲連結。</div>`;
+                return;
+            }
+
+            filteredGames.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+
+                const deleteBtnHtml = isLoggedIn 
+                    ? `<button class="delete-btn" onclick="deleteGame(${game.id})">🗑️ 刪除連結</button>` 
+                    : '';
+
+                card.innerHTML = `
+                    <img src="${game.img}" alt="${game.title}" onerror="this.src='https://via.placeholder.com/200x140?text=No+Image'">
+                    <div class="game-info">
+                        <div>
+                            <span class="game-grade">${game.grade}</span>
+                            <div class="game-title">${game.title}</div>
+                        </div>
+                        <div>
+                            <a href="${game.url}" target="_blank" class="play-btn">🎮 開始遊戲</a>
+                            ${deleteBtnHtml}
+                        </div>
+                    </div>
+                `;
+                gamesContainer.appendChild(card);
+            });
+        }
+
+        // 初始化頁面
+        window.onload = function() {
+            renderGames();
+        };
+    </script>
+</body>
+</html>
